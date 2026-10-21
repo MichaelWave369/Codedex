@@ -3,6 +3,7 @@ import type { CSSProperties, FormEvent } from 'react'
 import SplashSquad from './SplashSquad'
 import BattleArena from './BattleArena'
 import EvolutionLab from './EvolutionLab'
+import FusionLab from './FusionLab'
 import { EVOLUTIONS, experienceFor, grantExperience, readExperience, saveExperience, stageIndex, trainedLevel } from './progression'
 
 type Repo = {
@@ -276,6 +277,14 @@ export default function App() {
     baseLevel: stats(repo).level,
     language: repo.language,
   })), [repos])
+  const fusionRepos = useMemo(() => repos.map(repo => ({
+    name: repo.name,
+    full_name: repo.full_name,
+    description: repo.description,
+    html_url: repo.html_url,
+    language: repo.language,
+    kind: category(repo),
+  })), [repos])
   const countLabel = synced && repos.length ? 'Last synced ' + niceDate(new Date(synced).toISOString()) : 'Public GitHub data'
 
   return (
@@ -284,6 +293,7 @@ export default function App() {
         <a className="wordmark" href="#top" aria-label="CODEDEX home"><span className="logo-mark">◈</span> CODE<span>DEX</span><small>LAB · 001</small></a>
         <div className="top-meta"><span className="live-dot"/> REAL REPOS · ORIGINAL CREATURES</div>
         <a className="splash-jump" href="#splash-squad">SPLASH SQUAD ↘</a>
+        <a className="fusion-jump" href="#fusion-lab">FUSION LAB ↘</a>
         <a className="evolution-jump" href="#evolution-lab">EVOLUTION LAB ↘</a>
         <a className="arena-jump" href="#wild-encounters">WILD ENCOUNTERS ↘</a>
         <a className="github-link" href="https://github.com/MichaelWave369/Codedex" target="_blank" rel="noreferrer">VIEW SOURCE ↗</a>
@@ -352,6 +362,12 @@ export default function App() {
           const chosen = repos.find(repo => repo.full_name === fullName)
           if (chosen) setSelected(chosen)
         }} />
+
+        <FusionLab key={username} username={username} repos={fusionRepos} favorites={favorites}
+          onInspect={(fullName) => {
+            const chosen = repos.find(repo => repo.full_name === fullName)
+            if (chosen) setSelected(chosen)
+          }} />
 
         <section className="dex-section" id="collection">
           <div className="section-head">
