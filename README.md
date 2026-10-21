@@ -38,6 +38,19 @@ Public API only; private GitHub repositories are never read. This version pagina
 
 Creature appearance and rarity derive from a stable hash of the repository full name; type is a keyword heuristic based on repo metadata; level uses capped size, star and fork counts. Favorites are browser-local, not GitHub stars.
 
+
+## R2 / Wild Encounters
+
+A standalone, entirely local, turn-based battle minigame that uses only public repository metadata.
+
+1. Select one of the currently loaded GitHub repos as your challenger (defaults to a favorite, when available).
+2. Click **Find a Wild Repo** to encounter a randomly selected *different* public repo from the same trainer collection.
+3. Choose **Code Pulse** (basic attack, gain one charge), **Overclock Surge** (strong attack, costs two charge), **Bubble Firewall** (reduce one incoming attack and gain charge), or **Patch Kit** (heal once per match).
+4. Battle against automated fictional counterattacks until someone reaches zero hit points.
+5. Record victories, defeats and streaks, and unlock four fictional trainer achievements. Records persist locally per GitHub username.
+
+Each creature inherits the CODEDEX heuristic type and level, while the battle engine applies a simple fictional eight-type advantage ring. Random opponent selection is the only nondeterministic encounter input; damage varies reproducibly based on round and repository names. Battle is a solo mode; no multiplayer, server or GitHub write access. You need at least two public repos to play. No battle statistic is an assessment of code quality, security, or reliability.
+
 ## License and rights
 
 MIT. All creature designs and app assets are original. CODEDEX is an independent, playful fan-inspired concept and is not affiliated with, endorsed by, or sponsored by Nintendo, Pokémon or The Pokémon Company. It uses no official Pokémon art, logos, or characters.
