@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
 import SplashSquad from './SplashSquad'
+import BattleArena from './BattleArena'
 
 type Repo = {
   id: number
@@ -237,6 +238,15 @@ export default function App() {
   const team = caught.slice(0, 5)
   const typesSeen = new Set(repos.map(category)).size
   const featured = repos[0]
+  const arenaRepos = useMemo(() => repos.map(repo => ({
+    id: repo.id,
+    name: repo.name,
+    full_name: repo.full_name,
+    html_url: repo.html_url,
+    kind: category(repo),
+    level: stats(repo).level,
+    stargazers_count: repo.stargazers_count,
+  })), [repos])
   const countLabel = synced && repos.length ? 'Last synced ' + niceDate(new Date(synced).toISOString()) : 'Public GitHub data'
 
   return (
@@ -245,6 +255,7 @@ export default function App() {
         <a className="wordmark" href="#top" aria-label="CODEDEX home"><span className="logo-mark">◈</span> CODE<span>DEX</span><small>LAB · 001</small></a>
         <div className="top-meta"><span className="live-dot"/> REAL REPOS · ORIGINAL CREATURES</div>
         <a className="splash-jump" href="#splash-squad">SPLASH SQUAD ↘</a>
+        <a className="arena-jump" href="#wild-encounters">WILD ENCOUNTERS ↘</a>
         <a className="github-link" href="https://github.com/MichaelWave369/Codedex" target="_blank" rel="noreferrer">VIEW SOURCE ↗</a>
       </header>
 
@@ -294,6 +305,11 @@ export default function App() {
         </section>
 
         <SplashSquad key={username} username={username} repos={repos} favorites={favorites} onInspect={(fullName) => {
+          const chosen = repos.find(repo => repo.full_name === fullName)
+          if (chosen) setSelected(chosen)
+        }} />
+
+        <BattleArena key={username} username={username} repos={arenaRepos} favorites={favorites} onInspect={(fullName) => {
           const chosen = repos.find(repo => repo.full_name === fullName)
           if (chosen) setSelected(chosen)
         }} />
