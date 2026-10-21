@@ -51,6 +51,21 @@ A standalone, entirely local, turn-based battle minigame that uses only public r
 
 Each creature inherits the CODEDEX heuristic type and level, while the battle engine applies a simple fictional eight-type advantage ring. Random opponent selection is the only nondeterministic encounter input; damage varies reproducibly based on round and repository names. Battle is a solo mode; no multiplayer, server or GitHub write access. You need at least two public repos to play. No battle statistic is an assessment of code quality, security, or reliability.
 
+
+## R3 / Evolution Lab
+
+Train any repo-backed creature and unlock visually different, original forms. Experience belongs to each repository and is saved only in your browser for the currently selected public GitHub trainer.
+
+- **Code Drill** grants 60 fictional XP per click.
+- **Wild Encounter victory** grants 80 XP to the winning repo-backed Codémon, linking arena play with the lab.
+- Evolution stages: **Spark** (0 XP), **Hatchling** (120 XP), **Evolved** (360 XP), and **Ascended** (900 XP).
+- Evolving reveals new creature accessories and silhouette elements in the lab and main Codédex cards, including wings, antennae, and an ultimate crown and aura.
+- A slow, capped square-root XP bonus increases displayed battle level without exceeding level 100.
+- Pick creatures, inspect their records, see progress to the next evolution, and track how many have trained and evolved.
+- Maximum XP per creature: 5,000, so growth is finite and locally reproducible.
+
+XP, levels and evolutionary forms are deliberately **fictional game mechanics**, not measurements of project maturity, performance, or security. Real GitHub repositories remain unchanged. No login or online game server needed.
+
 ## License and rights
 
 MIT. All creature designs and app assets are original. CODEDEX is an independent, playful fan-inspired concept and is not affiliated with, endorsed by, or sponsored by Nintendo, Pokémon or The Pokémon Company. It uses no official Pokémon art, logos, or characters.
