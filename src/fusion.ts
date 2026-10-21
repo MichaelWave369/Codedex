@@ -100,10 +100,6 @@ export function fusionHash(input: string): number {
   return h >>> 0
 }
 
-function pick<T>(options: readonly T[], dna: number, salt: number): T {
-  return options[(dna >>> 0 + salt) % options.length] ?? options[0]
-}
-
 function safeStem(name: string): string {
   const simplified = name.replace(/[^a-z0-9]+/gi, ' ').trim()
   const words = simplified.split(/\s+/).filter(Boolean)
@@ -149,7 +145,9 @@ export function fuse(a: FusionParent, b: FusionParent, generation = 0, createdAt
     'Keep the experiment reproducible and easy to fork or extend.',
   ]
   const premise = 'Build ' + target + ' for ' + audience + '. ' + twist.charAt(0).toUpperCase() + twist.slice(1) + '.'
-  const blend = a.name + ' inspires ' + left.gift + '; ' + b.name + ' inspires ' + right.gift + '.'
+  const intro = (parent: FusionParent) => (parent.description || 'No public description provided').trim().slice(0, 180)
+  const blend = a.name + ' (' + intro(a) + ') inspires ' + left.gift +
+    '; ' + b.name + ' (' + intro(b) + ') inspires ' + right.gift + '.'
   return {
     id: a.full_name + '|' + b.full_name + '|' + step,
     generation: step,
@@ -192,9 +190,20 @@ export function loadFusions(username: string): FusionRecipe[] {
     return value.filter((entry): entry is FusionRecipe => {
       if (!entry || typeof entry !== 'object') return false
       const item = entry as Partial<FusionRecipe>
-      return typeof item.id === 'string' && typeof item.title === 'string' &&
+      return typeof item.id === 'string' && item.id.length < 700 &&
+        typeof item.title === 'string' && typeof item.codename === 'string' &&
+        typeof item.element === 'string' && Object.prototype.hasOwnProperty.call(ELEMENTS, item.element) &&
+        typeof item.generation === 'number' && Number.isFinite(item.generation) &&
+        typeof item.dna === 'number' && Number.isFinite(item.dna) &&
         Array.isArray(item.parents) && item.parents.length === 2 &&
-        typeof item.premise === 'string' && Array.isArray(item.mvp) && Array.isArray(item.acceptance)
+        item.parents.every((p: unknown) => Boolean(p && typeof p === 'object' &&
+          typeof (p as FusionParent).full_name === 'string' && typeof (p as FusionParent).name === 'string' &&
+          typeof (p as FusionParent).kind === 'string' &&
+          Object.prototype.hasOwnProperty.call(ELEMENTS, (p as FusionParent).kind))) &&
+        typeof item.premise === 'string' && typeof item.blend === 'string' &&
+        typeof item.tagline === 'string' && typeof item.nextQuest === 'string' &&
+        Array.isArray(item.mvp) && item.mvp.every((v: unknown) => typeof v === 'string') &&
+        Array.isArray(item.acceptance) && item.acceptance.every((v: unknown) => typeof v === 'string')
     }).slice(0, MAX_FUSIONS)
   } catch { return [] }
 }
