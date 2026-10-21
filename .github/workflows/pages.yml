@@ -25,6 +25,8 @@ jobs:
           node-version: '22'
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Verify Fusion Lab engine
+        run: npm run test:fusion
       - name: Typecheck and build
         run: npm run build
       - name: Upload site
