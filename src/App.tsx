@@ -2,6 +2,8 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
 import SplashSquad from './SplashSquad'
 import BattleArena from './BattleArena'
+import EvolutionLab from './EvolutionLab'
+import { EVOLUTIONS, experienceFor, grantExperience, readExperience, saveExperience, stageIndex, trainedLevel } from './progression'
 
 type Repo = {
   id: number
@@ -98,11 +100,12 @@ async function fetchAll(username: string, signal: AbortSignal): Promise<Repo[]> 
   return found
 }
 
-function Sprite({ repo, big = false }: { repo: Repo; big?: boolean }) {
+function Sprite({ repo, big = false, xp = 0 }: { repo: Repo; big?: boolean; xp?: number }) {
   const kind = category(repo)
   const color = CATEGORIES[kind].color
   const { seed, rarity } = stats(repo)
   const shape = seed % 4
+  const form = stageIndex(xp)
   const id = useId().replace(/:/g, '')
   const eyes = seed % 2 === 0
   return (
@@ -122,6 +125,12 @@ function Sprite({ repo, big = false }: { repo: Repo; big?: boolean }) {
       <circle cx="120" cy="99" r={rarity === 'MYTHIC' ? 94 : 80}
         fill="none" stroke={color} strokeDasharray={rarity === 'MYTHIC' ? '3 9' : '2 13'}
         strokeWidth="1.5" opacity=".35" />
+      {form >= 1 && <g fill={color} opacity=".72" stroke={color} strokeWidth="2">
+        <path d="M71 97 23 61 34 144 78 147Z M169 97 217 61 206 144 162 147Z"/>
+      </g>}
+      {form >= 2 && <g fill="none" stroke={color} strokeLinecap="round" strokeWidth="9">
+        <path d="M94 64 74 21 M148 64 171 21 M70 149 39 173 M171 149 205 173"/>
+      </g>}
       {shape === 0 && <><path d="M72 79 55 16 113 52Z M166 79 184 16 127 52Z" fill={color} opacity=".75" stroke="#fff" strokeOpacity=".3" strokeWidth="2"/></>}
       {shape === 1 && <><path d="M68 106Q16 55 28 147Q45 166 79 143ZM172 106Q224 55 212 147Q195 166 161 143Z" fill={color} opacity=".68" stroke="#fff" strokeOpacity=".25" strokeWidth="2"/></>}
       {shape === 2 && <><path d="M99 67 115 10 130 64 M73 85 47 41 86 60 M167 85 192 41 154 60" fill="none" stroke={color} strokeWidth="13" strokeLinecap="round"/></>}
@@ -139,6 +148,11 @@ function Sprite({ repo, big = false }: { repo: Repo; big?: boolean }) {
       <path d="M74 168Q56 182 73 189 M166 168Q185 182 166 189" stroke={color} strokeWidth="8"
         strokeLinecap="round" fill="none"/>
       <path d="M60 83 45 74 M181 83 195 73" stroke={color} strokeWidth="7" strokeLinecap="round"/>
+      {form === 3 && <g fill={color} stroke="white" strokeOpacity=".4" strokeWidth="1">
+        <path d="M86 55 90 6 120 35 150 6 154 55 120 62Z"/>
+        <path d="m29 22 5 12 12 5-12 5-5 12-5-12-12-5 12-5Z"/>
+        <path d="m213 23 4 11 11 4-11 4-4 11-4-11-11-4 11-4Z"/>
+      </g>}
       {rarity === 'MYTHIC' && <><path d="m30 31 4 11 11 4-11 4-4 11-4-11-11-4 11-4Z" fill="#ffe9a6"/><path d="m206 19 3 9 9 3-9 3-3 9-3-9-9-3 9-3Z" fill="#ffe9a6"/></>}
     </svg>
   )
@@ -149,6 +163,7 @@ export default function App() {
   const [draft, setDraft] = useState('MichaelWave369')
   const [repos, setRepos] = useState<Repo[]>([])
   const [favorites, setFavorites] = useState<string[]>(readFavorites)
+  const [experience, setExperience] = useState(() => readExperience('MichaelWave369'))
   const [query, setQuery] = useState('')
   const [kind, setKind] = useState<Kind | 'ALL'>('ALL')
   const [onlyFavorites, setOnlyFavorites] = useState(false)
@@ -194,6 +209,10 @@ export default function App() {
   }, [favorites])
 
   useEffect(() => {
+    saveExperience(username, experience)
+  }, [username, experience])
+
+  useEffect(() => {
     if (!selected) return
     const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelected(null) }
     window.addEventListener('keydown', handleKey)
@@ -216,6 +235,7 @@ export default function App() {
     setKind('ALL')
     setSelected(null)
     if (input === username) { void sync(username); return }
+    setExperience(readExperience(input))
     setUsername(input)
   }
 
@@ -226,13 +246,14 @@ export default function App() {
       (!onlyFavorites || favorites.includes(repo.full_name)) &&
       (!needle || [repo.name, repo.description || '', repo.language || '', ...(repo.topics || [])].join(' ').toLowerCase().includes(needle))
     ).sort((a, b) => {
-      if (sort === 'level') return stats(b).level - stats(a).level || a.name.localeCompare(b.name)
+      if (sort === 'level') return trainedLevel(stats(b).level, experienceFor(experience, b.full_name)) -
+        trainedLevel(stats(a).level, experienceFor(experience, a.full_name)) || a.name.localeCompare(b.name)
       if (sort === 'stars') return b.stargazers_count - a.stargazers_count
       if (sort === 'name') return a.name.localeCompare(b.name)
       if (sort === 'oldest') return a.created_at.localeCompare(b.created_at)
       return b.created_at.localeCompare(a.created_at)
     })
-  }, [repos, kind, onlyFavorites, query, sort, favorites])
+  }, [repos, kind, onlyFavorites, query, sort, favorites, experience])
 
   const caught = repos.filter((repo) => favorites.includes(repo.full_name))
   const team = caught.slice(0, 5)
@@ -244,8 +265,16 @@ export default function App() {
     full_name: repo.full_name,
     html_url: repo.html_url,
     kind: category(repo),
-    level: stats(repo).level,
+    level: trainedLevel(stats(repo).level, experienceFor(experience, repo.full_name)),
     stargazers_count: repo.stargazers_count,
+  })), [repos, experience])
+  const evolutionRepos = useMemo(() => repos.map(repo => ({
+    id: repo.id,
+    full_name: repo.full_name,
+    name: repo.name,
+    kind: category(repo),
+    baseLevel: stats(repo).level,
+    language: repo.language,
   })), [repos])
   const countLabel = synced && repos.length ? 'Last synced ' + niceDate(new Date(synced).toISOString()) : 'Public GitHub data'
 
@@ -255,6 +284,7 @@ export default function App() {
         <a className="wordmark" href="#top" aria-label="CODEDEX home"><span className="logo-mark">◈</span> CODE<span>DEX</span><small>LAB · 001</small></a>
         <div className="top-meta"><span className="live-dot"/> REAL REPOS · ORIGINAL CREATURES</div>
         <a className="splash-jump" href="#splash-squad">SPLASH SQUAD ↘</a>
+        <a className="evolution-jump" href="#evolution-lab">EVOLUTION LAB ↘</a>
         <a className="arena-jump" href="#wild-encounters">WILD ENCOUNTERS ↘</a>
         <a className="github-link" href="https://github.com/MichaelWave369/Codedex" target="_blank" rel="noreferrer">VIEW SOURCE ↗</a>
       </header>
@@ -273,7 +303,7 @@ export default function App() {
           <div className="hero-panel" aria-label="Featured original Codémon">
             <div className="panel-grid"/>
             <div className="panel-label">FIRST ENCOUNTER <span>NO. 001</span></div>
-            {featured ? <Sprite repo={featured} big /> : <div className="hero-unknown">?</div>}
+            {featured ? <Sprite repo={featured} big xp={experienceFor(experience, featured.full_name)} /> : <div className="hero-unknown">?</div>}
             <div className="panel-bottom"><div><span>WILD CODEMON APPEARED!</span><strong>{featured ? featured.name : 'YOUR NEXT BIG IDEA'}</strong></div><span>✳</span></div>
           </div>
         </section>
@@ -296,7 +326,7 @@ export default function App() {
             <div className="team-slots">
               {Array.from({ length: 5 }, (_, index) => (
                 <div className={'team-slot ' + (team[index] ? 'occupied' : '')} key={index} title={team[index]?.name || 'Empty team slot'}>
-                  {team[index] ? <Sprite repo={team[index]}/> : <span>+</span>}
+                  {team[index] ? <Sprite repo={team[index]} xp={experienceFor(experience, team[index].full_name)}/> : <span>+</span>}
                 </div>
               ))}
             </div>
@@ -309,7 +339,16 @@ export default function App() {
           if (chosen) setSelected(chosen)
         }} />
 
-        <BattleArena key={username} username={username} repos={arenaRepos} favorites={favorites} onInspect={(fullName) => {
+        <EvolutionLab key={username} username={username} repos={evolutionRepos} favorites={favorites}
+          experience={experience} onTrain={(fullName, reward) => setExperience(previous => grantExperience(previous, fullName, reward))}
+          onInspect={(fullName) => {
+            const chosen = repos.find(repo => repo.full_name === fullName)
+            if (chosen) setSelected(chosen)
+          }} />
+
+        <BattleArena key={username} username={username} repos={arenaRepos} favorites={favorites}
+          onVictory={(fullName, reward) => setExperience(previous => grantExperience(previous, fullName, reward))}
+          onInspect={(fullName) => {
           const chosen = repos.find(repo => repo.full_name === fullName)
           if (chosen) setSelected(chosen)
         }} />
@@ -353,9 +392,9 @@ export default function App() {
               const favorite = favorites.includes(repo.full_name)
               return <article className="creature-card" key={repo.id} style={{ '--accent': CATEGORIES[type].color } as CSSProperties}>
                 <div className="card-top"><span>NO. {String(index + 1).padStart(3, '0')}</span><span className={'rarity rarity-' + info.rarity.toLowerCase()}>{info.rarity}</span></div>
-                <button className="sprite-button" onClick={() => setSelected(repo)} aria-label={'Inspect ' + repo.name}><Sprite repo={repo}/></button>
+                <button className="sprite-button" onClick={() => setSelected(repo)} aria-label={'Inspect ' + repo.name}><Sprite repo={repo} xp={experienceFor(experience, repo.full_name)}/></button>
                 <div className="card-content">
-                  <div className="category-line"><span>{CATEGORIES[type].icon} {CATEGORIES[type].name.toUpperCase()} TYPE</span><span>LVL {info.level}</span></div>
+                  <div className="category-line"><span>{CATEGORIES[type].icon} {CATEGORIES[type].name.toUpperCase()} TYPE</span><span>LVL {trainedLevel(info.level, experienceFor(experience, repo.full_name))}</span></div>
                   <button className="card-name" onClick={() => setSelected(repo)} title={'Inspect ' + repo.name}>{repo.name}</button>
                   <p>{repo.description || 'A mysterious project waiting to tell its story.'}</p>
                   <div className="card-foot"><span>★ {repo.stargazers_count} <span className="soft-divider">·</span> {repo.language || 'CODE'}</span><button className={'heart-button ' + (favorite ? 'saved' : '')} onClick={() => toggleFavorite(repo)} aria-label={(favorite ? 'Remove ' : 'Add ') + repo.name + (favorite ? ' from' : ' to') + ' favorites'} aria-pressed={favorite}>{favorite ? '♥' : '♡'}</button></div>
@@ -380,12 +419,12 @@ export default function App() {
         return <div className="modal-backdrop" role="presentation" onMouseDown={() => setSelected(null)}>
           <div className="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title" onMouseDown={(e) => e.stopPropagation()} style={{ '--accent': CATEGORIES[type].color } as CSSProperties}>
             <button className="close" onClick={() => setSelected(null)} aria-label="Close creature details">✕</button>
-            <div className="detail-art"><div className="tiny-heading">SPECIMEN / {selected.id}</div><Sprite repo={selected} big/><div className="detail-rarity">{info.rarity} • {info.stage}</div></div>
+            <div className="detail-art"><div className="tiny-heading">SPECIMEN / {selected.id}</div><Sprite repo={selected} big xp={experienceFor(experience, selected.full_name)}/><div className="detail-rarity">{info.rarity} • {EVOLUTIONS[stageIndex(experienceFor(experience, selected.full_name))].label.toUpperCase()}</div></div>
             <div className="detail-copy">
               <div className="tiny-heading">{CATEGORIES[type].icon} {CATEGORIES[type].name.toUpperCase()} TYPE / CODEMON</div>
               <h2 id="detail-title">{selected.name}</h2>
               <p>{selected.description || 'A mysterious repository from the developer wilds.'}</p>
-              <div className="detail-stats"><div><span>LEVEL</span><strong>{info.level}</strong></div><div><span>ENERGY</span><strong>{info.energy}</strong></div><div><span>STARS</span><strong>{selected.stargazers_count}</strong></div><div><span>FORKS</span><strong>{selected.forks_count}</strong></div></div>
+              <div className="detail-stats"><div><span>LEVEL</span><strong>{trainedLevel(info.level, experienceFor(experience, selected.full_name))}</strong></div><div><span>ENERGY</span><strong>{info.energy}</strong></div><div><span>STARS</span><strong>{selected.stargazers_count}</strong></div><div><span>FORKS</span><strong>{selected.forks_count}</strong></div></div>
               <div className="moves"><div className="tiny-heading">SIGNATURE MOVE</div><strong>{CATEGORIES[type].move}</strong><small>Fictional ability · based on type</small></div>
               <div className="meta-line">CREATED {niceDate(selected.created_at)} · LAST PUSH {niceDate(selected.pushed_at)}</div>
               <div className="detail-actions"><a href={selected.html_url} target="_blank" rel="noreferrer">VIEW REPO ↗</a><button onClick={() => toggleFavorite(selected)}>{favorite ? '♥ IN YOUR TEAM' : '♡ ADD TO TEAM'}</button></div>
