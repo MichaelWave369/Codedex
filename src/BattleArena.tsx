@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import type { CSSProperties } from 'react'
 import './battle-arena.css'
+import { BATTLE_REWARD } from './progression'
 
 type TypeName = 'MIND' | 'ARCADE' | 'ECHO' | 'PRISM' | 'COSMOS' | 'SHIELD' | 'FORGE' | 'WEB'
 export type ArenaRepo = {
@@ -18,7 +19,7 @@ type Phase = 'active' | 'win' | 'loss'
 type Encounter = { hero: Fighter; wild: Fighter; round: number; patches: number; phase: Phase; log: string[] }
 type Move = 'pulse' | 'surge' | 'shield' | 'patch'
 type RecordBook = { wins: number; losses: number; bestStreak: number; streak: number; lastWin: string | null }
-type Props = { username: string; repos: ArenaRepo[]; favorites: string[]; onInspect: (fullName: string) => void }
+type Props = { username: string; repos: ArenaRepo[]; favorites: string[]; onInspect: (fullName: string) => void; onVictory: (fullName: string, reward: number) => void }
 
 const COLORS: Record<TypeName, string> = {
   MIND: '#b4a2ff', ARCADE: '#ff899d', ECHO: '#ffda88', PRISM: '#ff9cea',
@@ -156,7 +157,7 @@ function FighterPanel({ fighter, role }: { fighter: Fighter; role: 'TRAINER' | '
   </div>
 }
 
-export default function BattleArena({ username, repos, favorites, onInspect }: Props) {
+export default function BattleArena({ username, repos, favorites, onInspect, onVictory }: Props) {
   const [selected, setSelected] = useState('')
   const [encounter, setEncounter] = useState<Encounter | null>(null)
   const [record, setRecord] = useState<RecordBook>(() => loadRecord(username))
@@ -184,6 +185,8 @@ export default function BattleArena({ username, repos, favorites, onInspect }: P
     const next = advance(encounter, move)
     setEncounter(next)
     if (next.phase === 'win') {
+      next.log = pushLog(next.log, '+' + BATTLE_REWARD + ' XP EARNED · Visit Evolution Lab to evolve your creature!')
+      onVictory(next.hero.repo.full_name, BATTLE_REWARD)
       setRecord(previous => {
         const streak = previous.streak + 1
         return { ...previous, wins: previous.wins + 1, streak, bestStreak: Math.max(previous.bestStreak, streak), lastWin: next.wild.repo.name }
@@ -231,7 +234,7 @@ export default function BattleArena({ username, repos, favorites, onInspect }: P
           <button type="button" onClick={() => action('shield')}><strong>⬡ BUBBLE FIREWALL</strong><small>Block 70% · +1 charge</small></button>
           <button type="button" onClick={() => action('patch')} disabled={encounter.patches === 0}><strong>✚ PATCH KIT</strong><small>Restore up to 30 HP · once</small></button>
         </div> :
-        <div className="arena-result"><strong>{encounter.phase === 'win' ? '★ YOU WON THE MATCH!' : '✕ DEFEAT · REBOOT AND RETRY'}</strong>
+        <div className="arena-result"><strong>{encounter.phase === 'win' ? '★ YOU WON THE MATCH! +' + BATTLE_REWARD + ' XP' : '✕ DEFEAT · REBOOT AND RETRY'}</strong>
           <button type="button" onClick={encounterWild}>NEXT ENCOUNTER ↗</button></div>}
       <div className="arena-log" aria-live="polite" aria-atomic="false">
         {encounter.log.map((line, index) => <p key={encounter.round + ':' + index}>{index === 0 ? '› ' : '· '}{line}</p>)}
@@ -248,6 +251,6 @@ export default function BattleArena({ username, repos, favorites, onInspect }: P
           <strong>{badge.label}</strong><small>{badge.threshold} VICTOR{badge.threshold > 1 ? 'IES' : 'Y'}</small>
         </div>)}
     </div>
-    <p className="arena-disclaimer">OFFLINE TURN RESOLUTION · PUBLIC REPO METADATA ONLY · BATTLE LEVELS, ADVANTAGES AND RANKS ARE FICTIONAL GAME RULES, NOT SOFTWARE QUALITY SCORES. WINS SAVE IN THIS BROWSER FOR @{username}.</p>
+    <p className="arena-disclaimer">OFFLINE TURN RESOLUTION · PUBLIC REPO METADATA ONLY · BATTLE LEVELS, ADVANTAGES AND RANKS ARE FICTIONAL GAME RULES, NOT SOFTWARE QUALITY SCORES. WINS AND BATTLE XP SAVE IN THIS BROWSER FOR @{username}.</p>
   </section>
 }
