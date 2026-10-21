@@ -66,6 +66,20 @@ Train any repo-backed creature and unlock visually different, original forms. Ex
 
 XP, levels and evolutionary forms are deliberately **fictional game mechanics**, not measurements of project maturity, performance, or security. Real GitHub repositories remain unchanged. No login or online game server needed.
 
+## R4 / Fusion Lab
+
+**Combine two existing public repositories into a new original Codémon and an actionable project concept.** This is a creative ideation tool, **not** automatic repository creation or code-merging.
+
+- Select Parent A and Parent B from the loaded trainer's public repo collection. They must be different.
+- The local deterministic idea engine uses the two repo names, descriptions, and inferred CODEDEX types to propose an original hybrid creature, concept title, premise, pairing rationale, five-step MVP, four acceptance checks, and a next quest.
+- Curated cross-type combinations offer more specific ideas, such as sound + arcade, visual art + research, or AI + build tooling.
+- Each fusion gets new procedural two-color creature art and a stable identifier based on the ordered parents and generation. **Fuse again** to explore another seeded variation.
+- Save up to 60 offspring concepts per GitHub trainer in this browser; review or remove them later even if the GitHub API is unavailable.
+- Copy the Markdown blueprint, download a Markdown brief or export structured JSON. Exports happen locally with no server.
+- The application never copies the parents' source code or creates a new GitHub repository. Review actual APIs, security requirements, and software licenses before integrating any ideas.
+
+Run `npm run test:fusion` to exercise deterministic replay, uniqueness across generations, parent validation, exported content, and curated pairing logic. The Pages workflow runs the checks before its TypeScript/production build.
+
 ## License and rights
 
 MIT. All creature designs and app assets are original. CODEDEX is an independent, playful fan-inspired concept and is not affiliated with, endorsed by, or sponsored by Nintendo, Pokémon or The Pokémon Company. It uses no official Pokémon art, logos, or characters.
